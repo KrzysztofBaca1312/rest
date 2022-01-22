@@ -33,6 +33,28 @@ def get_todo(todo_id):
 @app.route("/api/v1/todos/<int:todo_id>", methods=["PUT"])
 def update_todo(todo_id):
     todo = todos.get(todo_id)
+    data = validate(todo)
+    if not todo:
+        abort(404)
+    if not request.json:
+        abort(400)
+    data = request.json
+    if any([
+        'title' in data and not isinstance(data.get('title'), str),
+        'description' in data and not isinstance(data.get('description'), str),
+        'done' in data and not isinstance(data.get('done'), bool)
+
+    ]):
+        abort(400)
+    todo = {
+        'title': data.get('title', todo['title']),
+        'description': data.get('description', todo['description']),
+        'done': data.get('done', todo['done'])
+    }
+    todos.update(todo_id, todo)
+    return jsonify({'todo': todo})
+
+def validate(todo):
     if not todo:
         abort(404)
     if not request.json:
@@ -44,13 +66,7 @@ def update_todo(todo_id):
         'done' in data and not isinstance(data.get('done'), bool)
     ]):
         abort(400)
-    todo = {
-        'title': data.get('title', todo['title']),
-        'description': data.get('description', todo['description']),
-        'done': data.get('done', todo['done'])
-    }
-    todos.update(todo_id, todo)
-    return jsonify({'todo': todo})
+    return data
 
 @app.route("/api/v1/todos/<int:todo_id>", methods = ["DELETE"])
 def delete_todo(todo_id):
